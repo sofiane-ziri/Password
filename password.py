@@ -1,61 +1,60 @@
 import hashlib
-import re
+import json
 
+PASSWORD_FILE = "passwords.json"
 
-def check_lenght_psw(password):
-    if len(password) < 8:
-        return "Le mot de passe doit comporter au moins 8 caractères."
+def save_passwords(passwords):
+    with open(PASSWORD_FILE, "w") as file:
+        json.dump(passwords, file)
 
+def load_passwords():
+    try:
+        with open(PASSWORD_FILE, "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return []
 
-def check_uppercase_psw(password):
-    if not re.search("[A-Z]", password):
-        return "Le mot de passe doit contenir au moins une lettre majuscule."
-
-
-def check_lowercase_psw(password):
-    if not re.search("[a-z]", password):
-        return "Le mot de passe doit contenir au moins une lettre minuscule."
-
-
-def check_number_psw(password):
-    if not re.search("[0-9]", password):
-        return "Le mot de passe doit contenir au moins un chiffre."
-
-
-def check_specialchart_psw(password):
-    if re.search("[!@#$%^&*]", password) is None:
-        return "Le mot de passe doit contenir au moins un caractère spécial."
-
-
-    return True
-
-
-def get_hash_password(password):
-    objet_hash = hashlib.sha256(password.encode())
-    dig_hex = objet_hash.hexdigest()
-    return dig_hex
-
-
-def get_password():
+def add_password():
     while True:
-        password = input("Entrez un mot de passe : ")
-        error_message = ""
-        if check_lenght_psw(password):
-            error_message = check_lenght_psw(password)
-        elif check_lowercase_psw(password):
-            error_message = check_lowercase_psw(password)
-        elif check_uppercase_psw(password):
-            error_message = check_uppercase_psw(password)
-        elif check_number_psw(password):
-            error_message = check_number_psw(password)
-        elif check_specialchart_psw(password) != True:
-            error_message = check_specialchart_psw(password)
-        if error_message == "":
+        password = input("Veuillez entrer un nouveau mot de passe : ")
+        if len(password) < 8:
+            print("Erreur : le mot de passe doit contenir au moins 8 caractères.")
+        elif not any(char.isupper() for char in password):
+            print("Erreur : le mot de passe doit contenir au moins une lettre majuscule.")
+        elif not any(char.islower() for char in password):
+            print("Erreur : le mot de passe doit contenir au moins une lettre minuscule.")
+        elif not any(char.isdigit() for char in password):
+            print("Erreur : le mot de passe doit contenir au moins un chiffre.")
+        elif not any(char in '!@#$%^&*' for char in password):
+            print("Erreur : le mot de passe doit contenir au moins un caractère spécial (!, @, #, $, %, ^, &, *).")
+        else:
+            hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+            passwords.append(hashed_password)
+            save_passwords(passwords)
+            print("Le mot de passe a été enregistré avec succès.")
             break
-        print(error_message)
-    return password
 
+def view_passwords():
+    if len(passwords) == 0:
+        print("Il n'y a aucun mot de passe enregistré.")
+    else:
+        print("Voici la liste des mots de passe enregistrés :")
+        for password in passwords:
+            print("-", password)
 
-password = get_password()
-hashed_password = get_hash_password(password)
-print("Hachage du mot de passe :", hashed_password)
+passwords = load_passwords()
+
+while True:
+    print("\nQue souhaitez-vous faire ?")
+    print("1. Ajouter un nouveau mot de passe")
+    print("2. Afficher les mots de passe enregistrés")
+    print("3. Quitter le programme")
+    choice = input("Entrez le numéro de l'option choisie : ")
+    if choice == "1":
+        add_password()
+    elif choice == "2":
+        view_passwords()
+    elif choice == "3":
+        break
+    else:
+        print("Option invalide.")
